@@ -1,0 +1,160 @@
+---
+title: "data_exploration"
+author: "Madison Hobbs"
+date: "4/27/2018"
+output: pdf_document
+---
+
+```{r}
+job_per_row <- read_csv("job_per_row.csv")
+ed_changed <- job_per_row %>% filter(experienceRequired_changed == "True") 
+
+ed_changed %>% group_by(normTitleCategory) %>% count() %>% arrange(desc(n))
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+## R Markdown
+
+
+```{r cars}
+fiveK <- read_csv("DataFest 2018 small data/data5K.csv")
+```
+
+```{r}
+fiveK %>% filter(country == "DE") %>% count(educationRequirements)
+fiveK %>% filter(country == "US") %>% count(educationRequirements)
+fiveK %>% filter(country == "CA") %>% count(educationRequirements)
+```
+
+```{r}
+sum(is.na(fiveK$normTitle)) / (sum(is.na(fiveK$normTitle)) + sum(!is.na(fiveK$normTitle)) )
+sum(!is.na(fiveK$normTitle)) 
+```
+
+
+```{r}
+View(fiveK)
+# norm title and highschool
+fiveK %>% filter(educationRequirements == "High School") %>% count(normTitle) %>% arrange(desc(n))
+```
+
+```{r}
+fiveK %>% filter(educationRequirements == "None") %>% count(normTitle) %>% arrange(desc(n))
+fiveK %>% filter(educationRequirements == "None") %>% count(normTitleCategory) %>% arrange(desc(n))
+```
+
+```{r}
+ggplot(fiveK, aes(x = clicks, y = localClicks)) + geom_point(alpha = 0.4)
+ggplot(fiveK, aes(x = clicks, y = localClicks)) + geom_point(alpha = 0.4) + xlim(c(0, 500)) + ylim(c(0, 200))
+```
+
+
+
+```{r}
+ggplot(fiveK, aes(x = descriptionWordCount, y = clicks)) + geom_point() 
+ggplot(fiveK, aes(x = descriptionWordCount, y = clicks)) + geom_point() + ylim(c(0,500))
+```
+
+```{r}
+ggplot(fiveK, aes(x = descriptionWordCount, y = jobAgeDays)) + geom_point(alpha = 0.4) 
+```
+
+```{r}
+ggplot(fiveK, aes(x = estimatedSalary, y = clicks)) + geom_point(alpha = 0.4) 
+```
+
+
+```{r}
+aggregated <- fiveK %>% group_by(jobId) %>% mutate(clicks = sum(clicks), localClicks = sum(localClicks), jobAgeDays = max(jobAgeDays), experienceRequired = max(experienceRequired), estimatedSalary = mean(estimatedSalary), descriptionCharacterLength = mean(descriptionCharacterLength), descriptionWordCount = mean(descriptionWordCount)) %>% ungroup() %>% distinct(jobId, .keep_all = TRUE)
+
+```
+
+```{r}
+
+ggplot(aggregated, aes(x = log(estimatedSalary), y = log(jobAgeDays), col = log(clicks))) + geom_point(alpha = 0.3)
+summary(aggregated$estimatedSalary)
+aggregated <- aggregated %>% mutate(discrete_salary = case_when(
+  estimatedSalary <= 24600 ~ "Q1",
+  estimatedSalary >4600 & estimatedSalary <= 34600 ~ "Q2",
+  estimatedSalary >34600 & estimatedSalary <= 57900 ~ "Q3",
+  estimatedSalary > 57900 ~ "Q4"
+  )) 
+```
+
+```{r}
+aggregated %>% group_by(discrete_salary) %>% summarise(mean(jobAgeDays), median(jobAgeDays), sd(jobAgeDays))
+aggregated %>% group_by(discrete_salary) %>% summarise(mean(clicks), median(clicks), sd(clicks))
+aggregated %>% group_by(discrete_salary) %>% count(clicks)
+
+tech_only %>% count(normTitleCategory)
+
+cor(aggregated$avgOverallRating, aggregated$clicks)
+cor(aggregated$estimatedSalary, aggregated$clicks)
+#ggplot(aggregated, aes(x = discrete_salary, y = jobAgeDays)) + geom_point()
+#ggplot(summary, aes(x = discrete_salary, y = jobAgeDays)) + geom_col()
+```
+
+```{r}
+library(lubridate)
+all <- all %>% mutate(wday = wday(date))
+
+wk <- all_distinct %>% mutate(wday = wday(date, label = TRUE)) %>% group_by(country, wday) %>% summarise(count = n()) %>% arrange(desc(count))
+wk
+```
+
+
+```{r}
+all_distinct %>% filter(country == "CA") %>% group_by(jobLanguage) %>% summarise(mean(estimatedSalary))
+```
+
+
+
+```{r}
+all_distinct <- all %>% distinct(jobId, .keep_all = TRUE) 
+
+all %>% distinct(jobId, .keep_all = TRUE) %>% group_by(companyId) %>% count() %>% arrange(desc(n))
+```
+
+
+```{r}
+all <- read_csv("2018 DataFest/datafest2018-Updated-April12.csv")
+
+teachers_only <- all %>% group_by(jobId) %>% filter(normTitle == "teacher") %>% ungroup() %>% distinct(jobId, .keep_all = TRUE) 
+
+teachers_only %>% dim()
+
+tech_only <- all %>% group_by(jobId) %>% filter(grepl('tech', normTitleCategory)) %>% ungroup() %>% distinct(jobId, .keep_all = TRUE) 
+tech_only %>% dim()
+
+all %>% distinct(jobId, .keep_all = TRUE) %>% dim()
+
+#aggregated <- fiveK %>% group_by(jobId) %>% mutate(clicks = sum(clicks), localClicks = sum(localClicks), jobAgeDays = max(jobAgeDays), experienceRequired = max(experienceRequired), estimatedSalary = mean(estimatedSalary), descriptionCharacterLength = mean(descriptionCharacterLength), descriptionWordCount = mean(descriptionWordCount)) %>% ungroup() %>% distinct(jobId, .keep_all = TRUE)
+
+#aggregated %>% filter(normTitle == "teacher") %>% summarise(mean())
+```
+```{r}
+
+```
+
+
+```{r}
+dates <- fiveK %>% group_by(date) %>% summarise(total_clicks = sum(clicks))
+ggplot(dates, aes(x = date, y = total_clicks)) + geom_point()
+# how click behaviour changes per job over time
+```
+
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
